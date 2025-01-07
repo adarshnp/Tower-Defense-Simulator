@@ -50,10 +50,50 @@ window.addEventListener('click', (event) => {
     }
 });
 
+//Enemy Path
+const pathPoints = [
+    new THREE.Vector3(-9, 0, -9),
+    new THREE.Vector3(0, 0, -9),
+    new THREE.Vector3(0, 0, 9),
+    new THREE.Vector3(9, 0, 9),
+  ];
+
+let enemies = [];
+
+//Spawn Enemies
+function spawnEnemy(){
+    const enemyGeometry = new THREE.SphereGeometry(0.3,8,8);
+    const enemyMaterial = new THREE.MeshBasicMaterial({color:0xff0000});
+    const enemy = new THREE.Mesh(enemyGeometry,enemyMaterial);
+    enemy.position.copy(pathPoints[0]);
+    enemy.pathIndex = 0;
+    enemies.push(enemy);
+    scene.add(enemy);
+}
+
+setInterval(spawnEnemy,2000);//spawn enemy every 2 seconds
+
+//Move Enemies
+function moveEnemies(speed){
+    enemies = enemies.filter((enemy)=>{
+        const target = pathPoints[enemy.pathIndex + 1];
+        if(!target){
+            scene.remove(enemy);
+            return false;// remove enemy becoz it reached the end
+        }
+        const direction = new THREE.Vector3().subVectors(target,enemy.position).normalize();
+        enemy.position.add(direction.multiplyScalar(speed));
+        if(enemy.position.distanceTo(target) < 0.1){
+            enemy.pathIndex++;
+        }
+        return true;
+    });
+}
 
 //Animate the cube
 function animate() {
     requestAnimationFrame(animate);
+    moveEnemies(0.05);
     renderer.render(scene, camera);
 }
 animate();
