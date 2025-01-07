@@ -8,8 +8,21 @@ renderer.setSize(window.innerWidth,window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 
-//set camera position
-camera.position.z = 5;
+// Add a simple grid
+const gridHelper = new THREE.GridHelper(20, 20);
+scene.add(gridHelper);
+
+
+// Create a plane for the map
+const planeGeometry = new THREE.PlaneGeometry(20, 20);
+const planeMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa, side: THREE.DoubleSide });
+const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+plane.rotation.x = Math.PI / 2;
+scene.add(plane);
+
+// Camera Position
+camera.position.set(10, 10, 10);
+camera.lookAt(0, 0, 0);
 
 //Animate the cube
 function animate(){
