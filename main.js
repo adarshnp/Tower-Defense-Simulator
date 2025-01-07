@@ -24,12 +24,12 @@ scene.add(plane);
 camera.position.set(10, 10, 10);
 camera.lookAt(0, 0, 0);
 
-//Tower class wit hshooting ability
+//Tower class with shooting ability
 class Tower {
     constructor(x, z) {
         this.geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 16);
         this.material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-        this.mesh = new THREE.Mesh( this.geometry,  this.material);
+        this.mesh = new THREE.Mesh(this.geometry, this.material);
         this.mesh.position.set(x, 0.5, z);
         this.range = 5;
         this.damage = 10;
@@ -49,17 +49,16 @@ class Tower {
     }
 
     //Shoot at the target
-    shoot(){
-        if(this.target){
-            scene.remove(this.target);
-            enemies.pop(this.target);
+    shoot() {
+        if (this.target) {
+            shootBullet(this, this.target);
         }
     }
 
     //Update towers actions
-    update(enemies){
+    update(enemies) {
         this.findTarget(enemies);
-        if(this.target){
+        if (this.target) {
             this.shoot();
         }
     }
@@ -127,6 +126,30 @@ function moveEnemies(speed) {
     });
 }
 
+//Bullet Animation
+function shootBullet(tower, enemy) {
+    const bulletGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+    const bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+
+    bullet.position.copy(tower.mesh.position);
+    scene.add(bullet);
+
+    //Animate bullet
+    const speed = 0.2;
+    const interval = setInterval(() => {
+        const direction = new THREE.Vector3().subVectors(enemy.position, bullet.position).normalize();
+        bullet.position.add(direction.multiplyScalar(speed));
+
+        //check if bullet hit enemy
+        if (bullet.position.distanceTo(enemy.position) < 0.2) {
+            clearInterval(interval);
+            scene.remove(bullet);
+            scene.remove(enemy);
+            enemies = enemies.filter(item => item != enemy);
+        }
+    }, 16);
+}
 //Animate the cube
 function animate() {
     requestAnimationFrame(animate);
