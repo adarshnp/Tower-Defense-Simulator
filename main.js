@@ -41,7 +41,7 @@ class Tower {
     findTarget(enemies) {
         this.target = null;
         for (let enemy of enemies) {
-            if (this.mesh.position.distanceTo(enemy.position) <= this.range) {
+            if (this.mesh.position.distanceTo(enemy.mesh.position) <= this.range) {
                 this.target = enemy;
                 break;
             }
@@ -94,36 +94,56 @@ const pathPoints = [
     new THREE.Vector3(9, 0, 9),
 ];
 
+//Enemy class with health
+class Enemy{
+    constructor(position){
+        this.geometry = new THREE.SphereGeometry(0.3, 8, 8);
+        this.material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        this.mesh = new THREE.Mesh(this.geometry, this.material);
+        this.mesh.position.copy(position);
+        this.pathIndex = 0;
+        this.health = 100;
+    }
+
+    //move enemy along the path
+    move(pathPoints){
+        const target = pathPoints[this.pathIndex + 1];
+        if(!target){
+            return false;
+        }
+        const direction = new THREE.Vector3().subVectors(target,this.mesh.position).normalize();
+        this.mesh.position.add(direction.multiplyScalar(0.05));
+        if(this.mesh.position.distanceTo(target) < 0.1){
+            this.pathIndex++;
+        }
+        return true;
+    }
+
+    //check if enemy is hit
+    takeDamage(amount){
+        this.health -= amount;
+        if(this.health <= 0){
+            scene.remove(this.mesh);
+            return false;
+        }
+        return true;
+    }
+}
+
 let enemies = [];
 
 //Spawn Enemies
 function spawnEnemy() {
-    const enemyGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-    const enemyMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
-    enemy.position.copy(pathPoints[0]);
-    enemy.pathIndex = 0;
+    const enemy = new Enemy(pathPoints[0]);
     enemies.push(enemy);
-    scene.add(enemy);
+    scene.add(enemy.mesh);
 }
 
 setInterval(spawnEnemy, 2000);//spawn enemy every 2 seconds
 
 //Move Enemies
-function moveEnemies(speed) {
-    enemies = enemies.filter((enemy) => {
-        const target = pathPoints[enemy.pathIndex + 1];
-        if (!target) {
-            scene.remove(enemy);
-            return false;// remove enemy becoz it reached the end
-        }
-        const direction = new THREE.Vector3().subVectors(target, enemy.position).normalize();
-        enemy.position.add(direction.multiplyScalar(speed));
-        if (enemy.position.distanceTo(target) < 0.1) {
-            enemy.pathIndex++;
-        }
-        return true;
-    });
+function moveEnemies() {
+    enemies = enemies.filter((enemy) => enemy.move(pathPoints));
 }
 
 //Bullet Animation
@@ -138,14 +158,15 @@ function shootBullet(tower, enemy) {
     //Animate bullet
     const speed = 0.2;
     const interval = setInterval(() => {
-        const direction = new THREE.Vector3().subVectors(enemy.position, bullet.position).normalize();
+        const direction = new THREE.Vector3().subVectors(enemy.mesh.position, bullet.position).normalize();
         bullet.position.add(direction.multiplyScalar(speed));
 
         //check if bullet hit enemy
-        if (bullet.position.distanceTo(enemy.position) < 0.2) {
+        if (bullet.position.distanceTo(enemy.mesh.position) < 0.2) {
             clearInterval(interval);
+            const hit = enemy.takeDamage(tower.damage);
+            if(!hit)tower.target = null;
             scene.remove(bullet);
-            scene.remove(enemy);
             enemies = enemies.filter(item => item != enemy);
         }
     }, 16);
@@ -153,7 +174,7 @@ function shootBullet(tower, enemy) {
 //Animate the cube
 function animate() {
     requestAnimationFrame(animate);
-    moveEnemies(0.05);
+    moveEnemies();
     towers.forEach(tower => tower.update(enemies));
     renderer.render(scene, camera);
 }
