@@ -34,6 +34,8 @@ class Tower {
         this.range = 5;
         this.damage = 10;
         this.target = null;
+        this.cooldown = 0;
+        this.cooldownTime = 1;
     }
 
 
@@ -57,9 +59,16 @@ class Tower {
 
     //Update towers actions
     update(enemies) {
+
+        if (this.cooldown > 0) {
+            this.cooldown -= 0.016; // Decrease cooldown (about 60 FPS)
+            return;  
+        }
+
         this.findTarget(enemies);
         if (this.target) {
             this.shoot();
+            this.cooldown = this.cooldownTime;
         }
     }
 }
@@ -124,6 +133,7 @@ class Enemy{
 
     //move enemy along the path
     move(pathPoints){
+        if (this.health <= 0) return false;
         const target = pathPoints[this.pathIndex + 1];
         if(!target){
             return false;
@@ -179,21 +189,25 @@ function shootBullet(tower, enemy) {
     bullet.position.copy(tower.mesh.position);
     scene.add(bullet);
 
-    //Animate bullet
+    // Animate bullet
     const speed = 0.2;
-    const interval = setInterval(() => {
+    const animateBullet = () => {
         const direction = new THREE.Vector3().subVectors(enemy.mesh.position, bullet.position).normalize();
         bullet.position.add(direction.multiplyScalar(speed));
 
-        //check if bullet hit enemy
+        // Check if bullet hit enemy
         if (bullet.position.distanceTo(enemy.mesh.position) < 0.2) {
-            clearInterval(interval);
             const hit = enemy.takeDamage(tower.damage);
-            if(!hit)tower.target = null;
+            if (!hit) {
+                tower.target = null;
+                enemies = enemies.filter(item => item !== enemy);
+            }
             scene.remove(bullet);
-            enemies = enemies.filter(item => item != enemy);
+        } else {
+            requestAnimationFrame(animateBullet);
         }
-    }, 16);
+    };
+    animateBullet();
 }
 let score = 0;
 function updateScore(){
