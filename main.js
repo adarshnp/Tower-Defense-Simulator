@@ -86,6 +86,23 @@ window.addEventListener('click', (event) => {
     }
 });
 
+//Handle Mouse right clicks to delete towers
+window.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    const mouse = new THREE.Vector2((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(towers.map(tower=>tower.mesh));
+    if (intersects.length > 0) {
+        console.log(intersects);
+        const selectedTowerMesh = intersects[0].object;
+        const towerIndex = towers.findIndex(tower=>tower.mesh == selectedTowerMesh);
+        if(towerIndex > -1){
+            scene.remove(selectedTowerMesh);
+            towers.splice(towerIndex,1);
+        }
+    }
+});
 //Enemy Path
 const pathPoints = [
     new THREE.Vector3(-9, 0, -9),
