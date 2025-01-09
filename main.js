@@ -128,7 +128,12 @@ class Enemy{
         this.mesh.position.copy(position);
         this.pathIndex = 0;
         this.health = 100;
-        this.healthBar = createHealthBar(this);
+        this.healthBar = document.createElement('div');
+        this.healthBar.className = 'health-bar';
+        const foreground = document.createElement('div');
+        foreground.className = 'foreground';
+        this.healthBar.appendChild(foreground);
+        document.getElementById('ui-container').appendChild(this.healthBar);
     }
 
     //move enemy along the path
@@ -140,7 +145,7 @@ class Enemy{
         }
         const direction = new THREE.Vector3().subVectors(target,this.mesh.position).normalize();
         this.mesh.position.add(direction.multiplyScalar(0.05));
-        this.healthBar.position.copy(this.mesh.position).add(new THREE.Vector3(0, 0.5, 0));
+        this.updateHealthBarUI();
 
         if(this.mesh.position.distanceTo(target) < 0.1){
             this.pathIndex++;
@@ -152,16 +157,50 @@ class Enemy{
     takeDamage(amount){
         this.health -= amount;
         const percentage = Math.max(0, this.health / 100);
-        this.healthBar.scale.set(percentage, 1, 1);
+        this.updateHealthBarUI();
         if(this.health <= 0){
             scene.remove(this.mesh);
-            scene.remove(this.healthBar);
+            this.removeHealthBarUI();
             score+=10;
             return false;
         }
         return true;
     }
+    updateHealthBarUI(){
+        const screenPosition = this.getScreenPosition();
+        this.healthBar.style.left = `${screenPosition.x}px`;
+        this.healthBar.style.top = `${screenPosition.y}px`;
+        const percentage = this.health / 100;
+        this.healthBar.querySelector('.foreground').style.width = `${percentage * 100}%`;
+        // Change health bar color
+        const foreground = this.healthBar.querySelector('.foreground');
+        if (percentage > 0.6) {
+            foreground.style.backgroundColor = '#00ff00'; // Green
+        } else if (percentage > 0.3) {
+            foreground.style.backgroundColor = '#ffff00'; // Yellow
+        } else {
+            foreground.style.backgroundColor = '#ff0000'; // Red
+        }
+
+    }
+
+    // Get 2D screen position from 3D world position
+    getScreenPosition() {
+        const vector = new THREE.Vector3();
+        vector.copy(this.mesh.position);
+        vector.y += 0.5;
+        vector.project(camera);
+
+        const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+
+        return { x, y };
+    }
+    removeHealthBarUI(){
+        this.healthBar.remove();
+    }
 }
+
 
 let enemies = [];
 
@@ -213,15 +252,7 @@ function updateScore(){
     document.getElementById('score').innerText = `Score : ${score}`;
 }
 
-// Create health bar (on enemy destruction)
-function createHealthBar(enemy) {
-    const healthBarGeometry = new THREE.PlaneGeometry(0.5, 0.1);
-    const healthBarMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const healthBar = new THREE.Mesh(healthBarGeometry, healthBarMaterial);
-    healthBar.position.set(enemy.mesh.position.x, enemy.mesh.position.y + 0.5, enemy.mesh.position.z);
-    scene.add(healthBar);
-    return healthBar;
-  }
+
 
 
 //Animate the cube
