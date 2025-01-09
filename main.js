@@ -94,7 +94,6 @@ window.addEventListener('contextmenu', (event) => {
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(towers.map(tower=>tower.mesh));
     if (intersects.length > 0) {
-        console.log(intersects);
         const selectedTowerMesh = intersects[0].object;
         const towerIndex = towers.findIndex(tower=>tower.mesh == selectedTowerMesh);
         if(towerIndex > -1){
@@ -105,10 +104,10 @@ window.addEventListener('contextmenu', (event) => {
 });
 //Enemy Path
 const pathPoints = [
-    new THREE.Vector3(-9, 0, -9),
-    new THREE.Vector3(0, 0, -9),
-    new THREE.Vector3(0, 0, 9),
-    new THREE.Vector3(9, 0, 9),
+    new THREE.Vector3(-9, 0.5, -9),
+    new THREE.Vector3(0, 0.5, -9),
+    new THREE.Vector3(0, 0.5, 9),
+    new THREE.Vector3(9, 0.5, 9),
 ];
 
 //Enemy class with health
@@ -120,6 +119,7 @@ class Enemy{
         this.mesh.position.copy(position);
         this.pathIndex = 0;
         this.health = 100;
+        this.healthBar = createHealthBar(this);
     }
 
     //move enemy along the path
@@ -130,6 +130,8 @@ class Enemy{
         }
         const direction = new THREE.Vector3().subVectors(target,this.mesh.position).normalize();
         this.mesh.position.add(direction.multiplyScalar(0.05));
+        this.healthBar.position.copy(this.mesh.position).add(new THREE.Vector3(0, 0.5, 0));
+
         if(this.mesh.position.distanceTo(target) < 0.1){
             this.pathIndex++;
         }
@@ -139,8 +141,11 @@ class Enemy{
     //check if enemy is hit
     takeDamage(amount){
         this.health -= amount;
+        const percentage = Math.max(0, this.health / 100);
+        this.healthBar.scale.set(percentage, 1, 1);
         if(this.health <= 0){
             scene.remove(this.mesh);
+            scene.remove(this.healthBar);
             return false;
         }
         return true;
@@ -154,6 +159,8 @@ function spawnEnemy() {
     const enemy = new Enemy(pathPoints[0]);
     enemies.push(enemy);
     scene.add(enemy.mesh);
+    const healthBar = createHealthBar(enemy);
+    enemy.healthBar = healthBar;
 }
 
 setInterval(spawnEnemy, 2000);//spawn enemy every 2 seconds
@@ -193,6 +200,18 @@ function updateScore(){
     score++;
     document.getElementById('score').innerText = `Score : ${score}`;
 }
+
+// Create health bar (on enemy destruction)
+function createHealthBar(enemy) {
+    const healthBarGeometry = new THREE.PlaneGeometry(0.5, 0.1);
+    const healthBarMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const healthBar = new THREE.Mesh(healthBarGeometry, healthBarMaterial);
+    healthBar.position.set(enemy.mesh.position.x, enemy.mesh.position.y + 0.5, enemy.mesh.position.z);
+    scene.add(healthBar);
+    return healthBar;
+  }
+
+
 //Animate the cube
 function animate() {
     requestAnimationFrame(animate);
