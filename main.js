@@ -169,8 +169,6 @@ function spawnEnemy() {
     const enemy = new Enemy(pathPoints[0]);
     enemies.push(enemy);
     scene.add(enemy.mesh);
-    const healthBar = createHealthBar(enemy);
-    enemy.healthBar = healthBar;
 }
 
 setInterval(spawnEnemy, 2000);//spawn enemy every 2 seconds
