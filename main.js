@@ -188,11 +188,17 @@ function shootBullet(tower, enemy) {
         }
     }, 16);
 }
+let score = 0;
+function updateScore(){
+    score++;
+    document.getElementById('score').innerText = `Score : ${score}`;
+}
 //Animate the cube
 function animate() {
     requestAnimationFrame(animate);
     moveEnemies();
     towers.forEach(tower => tower.update(enemies));
+    updateScore();
     renderer.render(scene, camera);
 }
 animate();
