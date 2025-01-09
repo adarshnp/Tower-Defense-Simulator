@@ -156,6 +156,7 @@ class Enemy{
         if(this.health <= 0){
             scene.remove(this.mesh);
             scene.remove(this.healthBar);
+            score+=10;
             return false;
         }
         return true;
@@ -209,7 +210,6 @@ function shootBullet(tower, enemy) {
 }
 let score = 0;
 function updateScore(){
-    score++;
     document.getElementById('score').innerText = `Score : ${score}`;
 }
 
